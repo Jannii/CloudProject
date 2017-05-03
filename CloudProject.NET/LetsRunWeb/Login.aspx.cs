@@ -13,5 +13,15 @@ namespace LetsRunWeb
         {
 
         }
+
+        protected void Login_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        protected void Reg_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

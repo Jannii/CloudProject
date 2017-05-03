@@ -12,4 +12,8 @@
     <asp:Label runat="server" Text="Password:" /><asp:TextBox runat="server" ID="passTB" />
     <asp:RequiredFieldValidator runat="server" ControlToValidate="passTB" ErrorMessage="This field are empty!" />
     <asp:RangeValidator runat="server" ControlToValidate="passTB" ErrorMessage="To short password" MinimumValue="5" MaximumValue="50"/>
+    <br />
+    <asp:Button runat="server" Text="Log in" OnClick="Login_Click" />
+    <br />
+    <asp:LinkButton runat="server" Text="Register" OnClick="Reg_Click"/>
 </asp:Content>
