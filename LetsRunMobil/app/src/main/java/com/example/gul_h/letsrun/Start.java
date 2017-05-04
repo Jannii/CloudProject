@@ -57,7 +57,6 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         checkAllSensorsOnPhone();
 
 
-
         //<-----Find components in view----->//
         final Button startAndStop = (Button) findViewById(R.id.start);
 
@@ -68,16 +67,19 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
 
                 //<-----Change text on button and call tickListener----->//
                 if (startAndStopBool == false) {
+                    startAndStopBool = true;
                     System.out.println("Starting gathering");
                     startAndStop.setText("Stop Running");
                     startTimer();
                     gatherStepCounter();
 
                 } else {
+                    startAndStopBool = false;
                     System.out.println("Stopping gathering");
                     startAndStop.setText("Start Running");
                     stopTimer();
                     gatherStepCounter();
+                    debugSendBatch();
                 }
 
             }
@@ -98,14 +100,33 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         @Override
         public void run() {
             //<-----Run the 3 methods for gathering information----->//
-            gatherGPSdata();
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    gatherGPSdata();
+                }
+            });
+
         }
     };
 
     //<-----Start the timer----->//
     public void startTimer() {
+
+        //<-----Redo the timer----->//
         if (timer != null) {
-            return;
+            timer = new Timer();
+            timerTask = new TimerTask() {
+                //<-----Override the old timer with the new one----->//
+                @Override
+                public void run() {
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            gatherGPSdata();
+                        }
+                    });
+                }
+            };
+            //return;
         }
 
         //<-----Create a new timer that tick every x(2000) milliseconds----->//
@@ -116,25 +137,39 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
 
     //<-----Stop the timer----->//
     public void stopTimer() {
+        //<-----Cancel operations and purge all of the things in the remaining of the queue----->//
         timer.cancel();
-        timer = null;
+        timer.purge();
+        //timerTask.cancel();
     }
 
     public void gatherGPSdata() {
+        //<-----Init the locationmanager----->//
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-        //<-----Check if the required permissions is in the manifest----->//
+        //<-----Runtime Operation to verify that the user does intent to use DANGEROUS fine location----->//
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            //<-----Do something if they dont exist----->//
-            System.out.println("Error1000: Check manifestfile for location permissions");
+            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             return;
         }
-        //<-----Start the locationListener And Request Data----->//
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, this);
-
         //<-----Gather information into pack----->//
         packOfLocations.add(cordinations);
+        System.out.println("Gathering GPS data...");
 
+    }
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                } else {
+                    System.out.println("Error1002: Permissions not granted for the GPS");
+                }
+                return;
+            }
+        }
     }
     public void gatherStepCounter(){
         //<-----If reset, reset the list aswell so dont send already sent value----->//
@@ -159,13 +194,8 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
     public void onLocationChanged(Location location) {
 
         //<-----OnLocationChanged, Save the cordinations in temp----->//
-        if(startAndStopBool == true) {
-            //<-----Pause information Gathering----->//
-        }
-        else{
-            //<-----Resume information Gathering----->//
             cordinations = "X:" + location.getLatitude() + "Y:" + location.getLongitude();
-        }
+
     }
 
     @Override
@@ -215,6 +245,17 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         for(int i = 0; i < deviceSensors.size(); i++){
             System.out.println("Sensor" + i + ": " + deviceSensors.get(i).toString() );
         }
+
+    }
+    //<-----Loop though the batches and print them out----->//
+    public void debugSendBatch(){
+        //<-----PackOfLocations print----->//
+        System.out.println("Printing out the batch for locations");
+        for(int i = 0; i < packOfLocations.size(); i++){
+            System.out.println(i + ": " + packOfLocations.get(i));
+        }
+        //<-----PackOfLocations clear----->//
+        packOfLocations.clear();
 
     }
 }
