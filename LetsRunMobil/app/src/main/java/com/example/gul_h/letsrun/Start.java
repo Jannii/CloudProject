@@ -20,7 +20,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -38,15 +40,16 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
     //<-----Packs of gathered data that should be sent to AZURE----->//
     private ArrayList<String> packOfLocations = new ArrayList();
     private ArrayList<String> packOfStepCounter = new ArrayList();
-    private ArrayList<String> packOfTemperature = new ArrayList();
+    private ArrayList<String> packOfHeartRate = new ArrayList();
     //<-----Temporary variables, used for EG. Sorting out unused data----->//
     private String cordinations = "-";
-    private float steps;
+    private float steps = 0;
+    private float heart = 0;
     //<-----SensorManager, handles all of the sensors----->//
     private SensorManager mSensorManager;
     //<-----All the underlying sensors----->//
     private Sensor mStepCounter;
-    private Sensor mTemperature;
+    private Sensor mHeartRate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,8 +91,10 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         //<-----Trigger listener for sensors----->//
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mStepCounter = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        mHeartRate = mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
         //<-----Listeners to trigger----->//
         mSensorManager.registerListener(this, mStepCounter, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(this, mHeartRate, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     //<-----Variables for timerCode----->//
@@ -102,7 +107,9 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             //<-----Run the 3 methods for gathering information----->//
             runOnUiThread(new Runnable() {
                 public void run() {
+
                     gatherGPSdata();
+                    gatherHeartRate();
                 }
             });
 
@@ -120,8 +127,10 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
                 @Override
                 public void run() {
                     runOnUiThread(new Runnable() {
-                        public void run() {
+                        public void run()
+                        {
                             gatherGPSdata();
+                            gatherHeartRate();
                         }
                     });
                 }
@@ -186,8 +195,9 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         }
 
     }
-    public void gatherTemperature(){
-
+    public void gatherHeartRate(){
+        //<-----Add the heartrate to the package----->//
+        packOfHeartRate.add(String.valueOf(heart));
 
     }
     @Override
@@ -225,6 +235,9 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         if(event.sensor.getType() == Sensor.TYPE_STEP_COUNTER){
             steps = event.values[0];
         }
+        if(event.sensor.getType() == Sensor.TYPE_HEART_RATE){
+            heart = event.values[0];
+        }
 
     }
 
@@ -254,8 +267,70 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         for(int i = 0; i < packOfLocations.size(); i++){
             System.out.println(i + ": " + packOfLocations.get(i));
         }
-        //<-----PackOfLocations clear----->//
+        //<-----PackOfLocations print----->//
+        System.out.println("Printing out the batch for stepcounter");
+        for(int i = 0; i < packOfStepCounter.size(); i++){
+            System.out.println(i + ": " + packOfStepCounter.get(i));
+        }
+        System.out.println("Printing out the batch for heartrate");
+        for(int i = 0; i < packOfHeartRate.size(); i++){
+            System.out.println(i + ": " + packOfHeartRate.get(i));
+        }
+
+        //<-----add meta data to the packages----->//
+        configureMetaData();
+
+        //<-----clearears----->//
         packOfLocations.clear();
+        packOfStepCounter.clear();
+        packOfHeartRate.clear();
+
+        //<-----Send the batches----->//
+        sendPackagesToCloud();
+    }
+
+    public void configureMetaData(){
+        //<-----Init values----->//
+        String date;
+        String userName;
+        String GPS;
+        String step;
+        String heart;
+        //<-----Declare values----->//
+        date = getDateAndTime();
+        userName = "Swashy";
+        GPS = "G";
+        step = "S";
+        heart = "H";
+        //<-----Assign values----->//
+
+
+        //<-----Date is third last value in table----->//
+        packOfLocations.add(date);
+        //<-----Username is second last value in table----->//
+        packOfLocations.add(userName);
+        //<-----Type of sensor is last value in table----->//
+        packOfLocations.add(GPS);
+
+        packOfStepCounter.add(date);
+        packOfStepCounter.add(userName);
+        packOfStepCounter.add(step);
+
+        packOfHeartRate.add(date);
+        packOfHeartRate.add(userName);
+        packOfHeartRate.add(heart);
+    }
+    public String getDateAndTime(){
+        //<-----Get the current time on the device----->//
+        Calendar c = Calendar.getInstance();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String formattedDate = df.format(c.getTime());
+        //<-----Return date as string----->//
+        return formattedDate;
+
+    }
+    public void sendPackagesToCloud(){
+
 
     }
 }
