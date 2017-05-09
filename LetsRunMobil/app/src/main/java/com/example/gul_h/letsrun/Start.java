@@ -2,7 +2,6 @@ package com.example.gul_h.letsrun;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -12,13 +11,10 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -26,6 +22,10 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import com.microsoft.azure.storage.*;
+import com.microsoft.azure.storage.table.*;
+import com.microsoft.azure.storage.table.TableQuery.*;
 
 /**
  * Created by gul_h on 2017-05-03.
@@ -127,8 +127,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
                 @Override
                 public void run() {
                     runOnUiThread(new Runnable() {
-                        public void run()
-                        {
+                        public void run() {
                             gatherGPSdata();
                             gatherHeartRate();
                         }
@@ -158,7 +157,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
 
         //<-----Runtime Operation to verify that the user does intent to use DANGEROUS fine location----->//
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             return;
         }
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, this);
@@ -167,6 +166,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         System.out.println("Gathering GPS data...");
 
     }
+
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
             case 1: {
@@ -180,31 +180,34 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             }
         }
     }
-    public void gatherStepCounter(){
+
+    public void gatherStepCounter() {
         //<-----If reset, reset the list aswell so dont send already sent value----->//
-        if(packOfStepCounter.size() >= 2){
+        if (packOfStepCounter.size() >= 2) {
             packOfStepCounter.clear();
         }
 
         //<-----Gather start and stop values, and the value between is walken steps----->//
-        if (startAndStopBool == false){
+        if (startAndStopBool == false) {
             packOfStepCounter.add(String.valueOf(steps));
 
-        }else{
+        } else {
             packOfStepCounter.add(String.valueOf(steps));
         }
 
     }
-    public void gatherHeartRate(){
+
+    public void gatherHeartRate() {
         //<-----Add the heartrate to the package----->//
         packOfHeartRate.add(String.valueOf(heart));
 
     }
+
     @Override
     public void onLocationChanged(Location location) {
 
         //<-----OnLocationChanged, Save the cordinations in temp----->//
-            cordinations = "X:" + location.getLatitude() + "Y:" + location.getLongitude();
+        cordinations = "X:" + location.getLatitude() + "|" + "Y:" + location.getLongitude();
 
     }
 
@@ -232,10 +235,10 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
     @Override
     public void onSensorChanged(SensorEvent event) {
         //<-----Store sensor values into temps----->//
-        if(event.sensor.getType() == Sensor.TYPE_STEP_COUNTER){
+        if (event.sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
             steps = event.values[0];
         }
-        if(event.sensor.getType() == Sensor.TYPE_HEART_RATE){
+        if (event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
             heart = event.values[0];
         }
 
@@ -247,7 +250,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
 
     }
 
-    public void checkAllSensorsOnPhone(){
+    public void checkAllSensorsOnPhone() {
 
         //<-----Check for all the sensors on the phone----->//
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -255,41 +258,38 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
 
 
         //<-----Loop though the list and print them out----->//
-        for(int i = 0; i < deviceSensors.size(); i++){
-            System.out.println("Sensor" + i + ": " + deviceSensors.get(i).toString() );
+        for (int i = 0; i < deviceSensors.size(); i++) {
+            System.out.println("Sensor" + i + ": " + deviceSensors.get(i).toString());
         }
 
     }
+
     //<-----Loop though the batches and print them out----->//
-    public void debugSendBatch(){
+    public void debugSendBatch() {
         //<-----PackOfLocations print----->//
         System.out.println("Printing out the batch for locations");
-        for(int i = 0; i < packOfLocations.size(); i++){
+        for (int i = 0; i < packOfLocations.size(); i++) {
             System.out.println(i + ": " + packOfLocations.get(i));
         }
         //<-----PackOfLocations print----->//
         System.out.println("Printing out the batch for stepcounter");
-        for(int i = 0; i < packOfStepCounter.size(); i++){
+        for (int i = 0; i < packOfStepCounter.size(); i++) {
             System.out.println(i + ": " + packOfStepCounter.get(i));
         }
         System.out.println("Printing out the batch for heartrate");
-        for(int i = 0; i < packOfHeartRate.size(); i++){
+        for (int i = 0; i < packOfHeartRate.size(); i++) {
             System.out.println(i + ": " + packOfHeartRate.get(i));
         }
 
         //<-----add meta data to the packages----->//
         configureMetaData();
 
-        //<-----clearears----->//
-        packOfLocations.clear();
-        packOfStepCounter.clear();
-        packOfHeartRate.clear();
 
         //<-----Send the batches----->//
         sendPackagesToCloud();
     }
 
-    public void configureMetaData(){
+    public void configureMetaData() {
         //<-----Init values----->//
         String date;
         String userName;
@@ -320,7 +320,8 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         packOfHeartRate.add(userName);
         packOfHeartRate.add(heart);
     }
-    public String getDateAndTime(){
+
+    public String getDateAndTime() {
         //<-----Get the current time on the device----->//
         Calendar c = Calendar.getInstance();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -329,8 +330,83 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         return formattedDate;
 
     }
-    public void sendPackagesToCloud(){
 
+    public void sendPackagesToCloud() {
+    //<-----Threading for network use----->//
+        Thread th = new Thread(new Runnable() {
+            public void run() {
+
+                //<-----Get and set up connectionstring----->//
+                String storageConnectionString = setUpCloud();
+                //<-----send Batch(4mb max)----->//
+                sendTableBatch(storageConnectionString);
+            }});
+        th.start();
+    }
+
+    public String setUpCloud() {
+        //<-----Connection String----->//
+      String storageConnectionString = "DefaultEndpointsProtocol=https;"
+                + "AccountName=swashy;"
+                + "AccountKey=htDP1zlcodix9vgpq7w6Yuo9VNPE0/H5nC9AHjePUM8xFJ2NGRCZJZGIbBVuZ6uAemarlQgz/SHrP6si/LJ3Kw==";
+
+        try {
+
+            //<-----Setting up GPS Table----->//
+            CloudStorageAccount storageAccount = CloudStorageAccount.parse(storageConnectionString);
+            CloudTableClient tableClient = storageAccount.createCloudTableClient();
+            CloudTable cloudTable = tableClient.getTableReference("hejjohan");
+            cloudTable.createIfNotExists();
+
+            //<-----Finished----->//
+
+            System.out.println("Setted up the cloud");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        //<-----Return the string----->//
+        return storageConnectionString;
+    }
+
+    public void sendTableBatch(String connectionString){
+        try
+        {
+            //<-----Get reference to GPS table storage----->//
+            CloudStorageAccount storageAccount = CloudStorageAccount.parse(connectionString);
+            CloudTableClient tableClient = storageAccount.createCloudTableClient();
+            TableBatchOperation batchOperation = new TableBatchOperation();
+            CloudTable cloudTable = tableClient.getTableReference("hejjohan");
+
+            //<-----Loop through the packs and add it to a table batch----->//
+            for(int i = 0; i < packOfLocations.size()-4; i++) {
+            //<-----Split locations into X and Y----->//
+                String[] splittedArray = packOfLocations.get(i).toString().split("|");
+
+                GPSEntity GPSPack = new GPSEntity(splittedArray[0], splittedArray[1]);
+                GPSPack.setUserName(packOfLocations.get(packOfLocations.size()-2));
+                GPSPack.setDate(packOfLocations.get(packOfLocations.size()-3));
+                GPSPack.setType(packOfLocations.get(packOfLocations.size()-1));
+                batchOperation.insert(GPSPack);
+                //<-----Insert into the batch(list)----->//
+            }
+
+            //<-----Debug----->//
+            System.out.println("First index in batch " + batchOperation.get(0));
+
+            //<-----clearears----->//
+            packOfLocations.clear();
+            packOfStepCounter.clear();
+            packOfHeartRate.clear();
+
+
+            //<-----Execute batch----->//
+            cloudTable.execute(batchOperation);
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
 
     }
 }
+
