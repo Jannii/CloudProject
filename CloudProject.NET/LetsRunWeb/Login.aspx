@@ -15,5 +15,5 @@
     <br />
     <asp:Button runat="server" Text="Log in" OnClick="Login_Click" />
     <br />
-    <asp:LinkButton runat="server" Text="Register" OnClick="Reg_Click"/>
+    <asp:LinkButton runat="server" Text="Register" OnClick="Reg_Click" CausesValidation="false"/>
 </asp:Content>
