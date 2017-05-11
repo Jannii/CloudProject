@@ -65,4 +65,14 @@
         android:layout_alignLeft="@+id/userName"
         android:layout_alignStart="@+id/userName" />
 
+    <Button
+        android:id="@+id/audio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Audio"
+        android:layout_below="@+id/passWord"
+        android:layout_alignLeft="@+id/login"
+        android:layout_alignStart="@+id/login"
+        android:layout_marginTop="12dp" />
+
 </RelativeLayout>

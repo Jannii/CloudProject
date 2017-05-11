@@ -18,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
         final EditText theUserName =  (EditText) findViewById(R.id.userName);
         final EditText thePassword =  (EditText) findViewById(R.id.passWord);
         final Button theLogin = (Button) findViewById(R.id.login);
+        final Button theAudio = (Button) findViewById(R.id.audio);
 
 
         //<-----Method for performing login----->//
@@ -54,6 +55,20 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("compare against AzureSQL");
                     //<-----Code here----->//
                 }
+            }
+        });
+        theAudio.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                //<-----Click on button action----->//
+
+
+
+                startActivity(new Intent(MainActivity.this, AudioToText.class));
+
+                //<-----Error validation----->//
+
+
+
             }
         });
     }
