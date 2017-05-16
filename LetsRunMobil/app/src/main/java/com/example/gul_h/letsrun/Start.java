@@ -22,6 +22,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 import com.microsoft.azure.storage.*;
 import com.microsoft.azure.storage.table.*;
@@ -271,7 +274,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
     public void onLocationChanged(Location location) {
 
         //<-----OnLocationChanged, Save the cordinations in temp----->//
-        cordinations = "X:" + location.getLatitude() + "|" + "Y:" + location.getLongitude();
+        cordinations = location.getLatitude() + "," + location.getLongitude();
 
     }
 
@@ -394,6 +397,15 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         return formattedDate;
 
     }
+    public String getDay() {
+        //<-----Get the current time on the device----->//
+        Calendar c = Calendar.getInstance();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        String formattedDate = df.format(c.getTime());
+        //<-----Return date as string----->//
+        return formattedDate;
+
+    }
 
     public void sendPackagesToCloud() {
     //<-----Threading for network use----->//
@@ -445,12 +457,27 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             //<-----Loop through the packs and add it to a table batch----->//
             for(int i = 0; i < packOfLocations.size()-4; i++) {
             //<-----Split locations into X and Y----->//
-                String[] splittedArray = packOfLocations.get(i).toString().split("|");
-                String rowKey = String.valueOf(i);
+                String splittedArray = packOfLocations.get(i);
+                String[] vals = splittedArray.split(",");
+                if(vals.length == 2 ) {
+                    System.out.println("Splitted array:" + vals[0] + vals[1] + "FROM: " + packOfLocations.get(i));
+                }
+                else{
 
-                GPSEntity GPSPack = new GPSEntity("Mattias" + getDateAndTime(),rowKey);
-                GPSPack.setLongitude(splittedArray[0]);
-                GPSPack.setLatitude(splittedArray[1]);
+                    System.out.println("Splitted array:" + vals[0] + vals[0] + "FROM: " + packOfLocations.get(i));
+                }
+
+                UUID uniqueKey = UUID.randomUUID();
+
+                GPSEntity GPSPack = new GPSEntity("Mattias" + getDay(),uniqueKey.toString());
+                if(vals.length == 2) {
+                    GPSPack.setLongitude(vals[0]);
+                    GPSPack.setLatitude(vals[1]);
+                }
+                else{
+                    GPSPack.setLongitude(vals[0]);
+                    GPSPack.setLatitude(vals[0]);
+                }
                 GPSPack.setUserName(packOfLocations.get(packOfLocations.size()-2));
                 GPSPack.setType(packOfLocations.get(packOfLocations.size()-1));
                 batchOperation.insert(GPSPack);
@@ -468,6 +495,10 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
 
             //<-----Execute batch----->//
             cloudTable.execute(batchOperation);
+
+
+            //<-----DEBUG, Get Table----->//
+            debugGetBatchFromCloud(connectionString);
         }
         catch (Exception ex)
         {
@@ -475,6 +506,45 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         }
 
     }
+
+    public void debugGetBatchFromCloud(String connectionString){
+        try
+        {
+            // Define constants for filters.
+            final String PARTITION_KEY = "Mattias";
+
+            // Retrieve storage account from connection-string.
+            CloudStorageAccount storageAccount = CloudStorageAccount.parse(connectionString);
+
+            // Create the table client.
+            CloudTableClient tableClient = storageAccount.createCloudTableClient();
+
+            // Create a cloud table object for the table.
+            CloudTable cloudTable = tableClient.getTableReference("hejjohan");
+
+            // Create a filter condition where the partition key is "Smith".
+            String partitionFilter = TableQuery.generateFilterCondition(PARTITION_KEY, QueryComparisons.EQUAL, "Mattias");
+
+            // Specify a partition query, using "Smith" as the partition key filter.
+            TableQuery<GPSEntity> partitionQuery = TableQuery.from(GPSEntity.class).where(partitionFilter);
+
+            // Loop through the results, displaying information about the entity.
+            for (GPSEntity entity : cloudTable.execute(partitionQuery)) {
+
+                System.out.println(entity.getPartitionKey() +
+                        " " + entity.getRowKey() +
+                        "\t" + entity.getLongitude() +
+                        "\t" + entity.getLatitude());
+            }
+        }
+        catch (Exception e)
+        {
+            // Output the stack trace.
+            e.printStackTrace();
+        }
+
+    }
+
     public void displayButtonsAndText(){
 
         if(startAndStopBool == false){

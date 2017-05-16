@@ -8,6 +8,12 @@ import com.microsoft.azure.storage.table.TableServiceEntity;
 
 public class GPSEntity extends TableServiceEntity {
 
+    String latitude;
+    String longitude;
+    String ID;
+    String type = "G";
+    String userName;
+
 
     public GPSEntity(String user, String row ){
         this.partitionKey = user;
@@ -16,12 +22,6 @@ public class GPSEntity extends TableServiceEntity {
     }
     public GPSEntity (){}
 
-        String latitude;
-        String longitude;
-
-        String ID;
-        String type = "G";
-        String userName;
 
 
     public String getLatitude() {
