@@ -1,7 +1,9 @@
 package com.example.gul_h.letsrun;
 
 import android.Manifest;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -11,21 +13,28 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import com.microsoft.azure.storage.*;
 import com.microsoft.azure.storage.table.*;
 import com.microsoft.azure.storage.table.TableQuery.*;
+
+import org.w3c.dom.Text;
 
 /**
  * Created by gul_h on 2017-05-03.
@@ -41,15 +50,29 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
     private ArrayList<String> packOfLocations = new ArrayList();
     private ArrayList<String> packOfStepCounter = new ArrayList();
     private ArrayList<String> packOfHeartRate = new ArrayList();
+    private ArrayList<String> packOfNotes = new ArrayList();
     //<-----Temporary variables, used for EG. Sorting out unused data----->//
     private String cordinations = "-";
     private float steps = 0;
     private float heart = 0;
+
     //<-----SensorManager, handles all of the sensors----->//
     private SensorManager mSensorManager;
     //<-----All the underlying sensors----->//
     private Sensor mStepCounter;
     private Sensor mHeartRate;
+    //<-----Components in view----->//
+    private TextView theLabelText = null;
+    private TextView theWhatYouSaid = null;
+    private ImageButton theRecord = null;
+    private Button theConfirmAndSend = null;
+    private Button theConfirmToCloud = null;
+
+
+
+    //<-----Audio Code----->//
+    private final int REQ_CODE_SPEECH_INPUT = 100;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +86,42 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         //<-----Find components in view----->//
         final Button startAndStop = (Button) findViewById(R.id.start);
 
+        final TextView labelText = (TextView) findViewById(R.id.LabelForWhatToDo);
+        final TextView whatYouSaid = (TextView) findViewById(R.id.whatYouSaid);
+        final ImageButton record = (ImageButton) findViewById(R.id.btnSpeak);
+        final Button confirmAndSend = (Button) findViewById(R.id.confirmSend);
+        final Button confirmToCloud = (Button) findViewById(R.id.ConfirmToCloud);
+
+
+        //<-----Create Global variables----->//
+        theLabelText = labelText;
+        theWhatYouSaid = whatYouSaid;
+        theRecord = record;
+        theConfirmAndSend = confirmAndSend;
+        theConfirmToCloud = confirmToCloud;
+
+        record.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                promptSpeechInput();
+            }
+        });
+        confirmAndSend.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                addMetaDataToTable();
+            }
+        });
+        confirmToCloud.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                debugSendBatch();
+            }
+        });
+
         //<-----Method for performing start and stop operations----->//
         startAndStop.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -70,19 +129,24 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
 
                 //<-----Change text on button and call tickListener----->//
                 if (startAndStopBool == false) {
-                    startAndStopBool = true;
+
                     System.out.println("Starting gathering");
                     startAndStop.setText("Stop Running");
+                    displayButtonsAndText();
                     startTimer();
                     gatherStepCounter();
 
+                    startAndStopBool = true;
+
                 } else {
-                    startAndStopBool = false;
                     System.out.println("Stopping gathering");
                     startAndStop.setText("Start Running");
+                    displayButtonsAndText();
                     stopTimer();
                     gatherStepCounter();
-                    debugSendBatch();
+                    //debugSendBatch();
+
+                    startAndStopBool = false;
                 }
 
             }
@@ -371,6 +435,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
     public void sendTableBatch(String connectionString){
         try
         {
+
             //<-----Get reference to GPS table storage----->//
             CloudStorageAccount storageAccount = CloudStorageAccount.parse(connectionString);
             CloudTableClient tableClient = storageAccount.createCloudTableClient();
@@ -381,10 +446,12 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             for(int i = 0; i < packOfLocations.size()-4; i++) {
             //<-----Split locations into X and Y----->//
                 String[] splittedArray = packOfLocations.get(i).toString().split("|");
+                String rowKey = String.valueOf(i);
 
-                GPSEntity GPSPack = new GPSEntity(splittedArray[0], splittedArray[1]);
+                GPSEntity GPSPack = new GPSEntity("Mattias" + getDateAndTime(),rowKey);
+                GPSPack.setLongitude(splittedArray[0]);
+                GPSPack.setLatitude(splittedArray[1]);
                 GPSPack.setUserName(packOfLocations.get(packOfLocations.size()-2));
-                GPSPack.setDate(packOfLocations.get(packOfLocations.size()-3));
                 GPSPack.setType(packOfLocations.get(packOfLocations.size()-1));
                 batchOperation.insert(GPSPack);
                 //<-----Insert into the batch(list)----->//
@@ -406,6 +473,73 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         {
             ex.printStackTrace();
         }
+
+    }
+    public void displayButtonsAndText(){
+
+        if(startAndStopBool == false){
+        //<-----Start----->//
+
+            System.out.println("Hide New components");
+
+            theLabelText.setVisibility(View.INVISIBLE);
+            theWhatYouSaid.setVisibility(View.INVISIBLE);
+            theRecord.setVisibility(View.INVISIBLE);
+            theConfirmAndSend.setVisibility(View.INVISIBLE);
+            theConfirmToCloud.setVisibility(View.INVISIBLE);
+
+        }
+        else{
+        //<-----Stop----->//
+
+            System.out.println("Display New components");
+
+            theLabelText.setVisibility(View.VISIBLE);
+            theWhatYouSaid.setVisibility(View.VISIBLE);
+            theRecord.setVisibility(View.VISIBLE);
+            theConfirmAndSend.setVisibility(View.VISIBLE);
+            theConfirmToCloud.setVisibility(View.VISIBLE);
+            //<-----DEBUG----->//
+            System.out.println("Visibility is: " + theConfirmAndSend.getVisibility());
+
+        }
+    }
+    private void promptSpeechInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                getString(R.string.speech_prompt));
+        try {
+            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        } catch (ActivityNotFoundException a) {
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.speech_not_supported),
+                    Toast.LENGTH_SHORT).show();
+        }
+
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case REQ_CODE_SPEECH_INPUT: {
+                if (resultCode == RESULT_OK && null != data) {
+
+                    ArrayList<String> result = data
+                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    theWhatYouSaid.setText(result.get(0));
+                }
+                break;
+            }
+
+        }
+    }
+    public void addMetaDataToTable(){
+
+        packOfNotes.add(theWhatYouSaid.getText().toString());
 
     }
 }

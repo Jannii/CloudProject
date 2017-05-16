@@ -7,19 +7,22 @@ import com.microsoft.azure.storage.table.TableServiceEntity;
  */
 
 public class GPSEntity extends TableServiceEntity {
-    String latitude;
 
-    String longitude;
 
-    String type = "G";
-    String date;
-    String userName;
-
-    public GPSEntity(String latitude, String longitude){
-        this.latitude = latitude;
-        this.longitude = longitude;
+    public GPSEntity(String user, String row ){
+        this.partitionKey = user;
+        this.rowKey = row;
 
     }
+    public GPSEntity (){}
+
+        String latitude;
+        String longitude;
+
+        String ID;
+        String type = "G";
+        String userName;
+
 
     public String getLatitude() {
         return latitude;
@@ -45,19 +48,19 @@ public class GPSEntity extends TableServiceEntity {
         this.type = type;
     }
 
-    public String getDate() {
-        return date;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
-
     public String getUserName() {
         return userName;
     }
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public String getID() {
+        return ID;
+    }
+
+    public void setID(String ID) {
+        this.ID = ID;
     }
 }

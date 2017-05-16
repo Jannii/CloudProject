@@ -14,4 +14,41 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Start Running" />
+
+    <TextView
+        android:id="@+id/LabelForWhatToDo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Would to like to add a text speech as a note?"
+        android:visibility="invisible" />
+
+    <ImageButton
+        android:id="@+id/btnSpeak"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@null"
+        android:src="@drawable/ico_mic"
+        android:visibility="invisible" />
+
+    <TextView
+        android:id="@+id/whatYouSaid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="TextView"
+        android:visibility="invisible" />
+
+    <Button
+        android:id="@+id/confirmSend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Confirm Note"
+        android:visibility="invisible" />
+
+    <Button
+        android:id="@+id/ConfirmToCloud"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save to cloud"
+        android:visibility="invisible" />
+
 </LinearLayout>
