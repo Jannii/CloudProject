@@ -363,12 +363,15 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         String GPS;
         String step;
         String heart;
+        String note;
         //<-----Declare values----->//
         date = getDateAndTime();
         userName = "Swashy";
         GPS = "G";
         step = "S";
         heart = "H";
+        note = "N";
+
         //<-----Assign values----->//
 
 
@@ -386,6 +389,10 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         packOfHeartRate.add(date);
         packOfHeartRate.add(userName);
         packOfHeartRate.add(heart);
+
+        packOfNotes.add(date);
+        packOfNotes.add(userName);
+        packOfNotes.add(note);
     }
 
     public String getDateAndTime() {
@@ -431,8 +438,26 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             //<-----Setting up GPS Table----->//
             CloudStorageAccount storageAccount = CloudStorageAccount.parse(storageConnectionString);
             CloudTableClient tableClient = storageAccount.createCloudTableClient();
-            CloudTable cloudTable = tableClient.getTableReference("hejjohan");
+            CloudTable cloudTable = tableClient.getTableReference("dettagps");
             cloudTable.createIfNotExists();
+
+            //<-----Setting up StepCounter Table----->//
+            CloudStorageAccount storageAccount2 = CloudStorageAccount.parse(storageConnectionString);
+            CloudTableClient tableClient2 = storageAccount2.createCloudTableClient();
+            CloudTable cloudTable2 = tableClient2.getTableReference("dettastep");
+            cloudTable2.createIfNotExists();
+
+            //<-----Setting up HeartRate Table----->//
+            CloudStorageAccount storageAccount3 = CloudStorageAccount.parse(storageConnectionString);
+            CloudTableClient tableClient3 = storageAccount3.createCloudTableClient();
+            CloudTable cloudTable3 = tableClient3.getTableReference("dettaheart");
+            cloudTable3.createIfNotExists();
+
+            //<-----Setting up Notes Table----->//
+            CloudStorageAccount storageAccount4 = CloudStorageAccount.parse(storageConnectionString);
+            CloudTableClient tableClient4 = storageAccount4.createCloudTableClient();
+            CloudTable cloudTable4 = tableClient4.getTableReference("dettanote");
+            cloudTable4.createIfNotExists();
 
             //<-----Finished----->//
 
@@ -447,28 +472,21 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
     public void sendTableBatch(String connectionString){
         try
         {
+            //<-----Generate a random key----->//
+            UUID uniqueKey = UUID.randomUUID();
 
+            //<--------------------------------------------GPS---------------------------------------->//
             //<-----Get reference to GPS table storage----->//
             CloudStorageAccount storageAccount = CloudStorageAccount.parse(connectionString);
             CloudTableClient tableClient = storageAccount.createCloudTableClient();
             TableBatchOperation batchOperation = new TableBatchOperation();
-            CloudTable cloudTable = tableClient.getTableReference("hejjohan");
+            CloudTable cloudTable = tableClient.getTableReference("dettagps");
 
             //<-----Loop through the packs and add it to a table batch----->//
             for(int i = 0; i < packOfLocations.size()-4; i++) {
             //<-----Split locations into X and Y----->//
                 String splittedArray = packOfLocations.get(i);
                 String[] vals = splittedArray.split(",");
-                if(vals.length == 2 ) {
-                    System.out.println("Splitted array:" + vals[0] + vals[1] + "FROM: " + packOfLocations.get(i));
-                }
-                else{
-
-                    System.out.println("Splitted array:" + vals[0] + vals[0] + "FROM: " + packOfLocations.get(i));
-                }
-
-                UUID uniqueKey = UUID.randomUUID();
-
                 GPSEntity GPSPack = new GPSEntity("Mattias" + getDay(),uniqueKey.toString());
                 if(vals.length == 2) {
                     GPSPack.setLongitude(vals[0]);
@@ -484,6 +502,67 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
                 //<-----Insert into the batch(list)----->//
             }
 
+            //<--------------------------------------------StepCounter---------------------------------------->//
+            CloudStorageAccount storageAccount2 = CloudStorageAccount.parse(connectionString);
+            CloudTableClient tableClient2 = storageAccount2.createCloudTableClient();
+            TableBatchOperation batchOperation2 = new TableBatchOperation();
+            CloudTable cloudTable2 = tableClient2.getTableReference("dettastep");
+
+            //<-----Loop through the packs and add it to a table batch----->//
+            for(int i = 0; i < packOfStepCounter.size()-4; i++) {
+
+
+                StepCounterEntity stepPack = new StepCounterEntity("Mattias" + getDay(), uniqueKey.toString());
+                stepPack.setSteps(packOfStepCounter.get(i));
+
+
+                stepPack.setUserName(packOfLocations.get(packOfLocations.size()-2));
+                stepPack.setType(packOfLocations.get(packOfLocations.size()-1));
+                batchOperation2.insert(stepPack);
+                //<-----Insert into the batch(list)----->//
+            }
+
+            //<--------------------------------------------HeartRate---------------------------------------->//
+            CloudStorageAccount storageAccount3 = CloudStorageAccount.parse(connectionString);
+            CloudTableClient tableClient3 = storageAccount3.createCloudTableClient();
+            TableBatchOperation batchOperation3 = new TableBatchOperation();
+            CloudTable cloudTable3 = tableClient3.getTableReference("dettaheart");
+
+            //<-----Loop through the packs and add it to a table batch----->//
+            for(int i = 0; i < packOfHeartRate.size()-4; i++) {
+
+
+                HeartRateEntity heartPack = new HeartRateEntity("Mattias" + getDay(), uniqueKey.toString());
+                heartPack.setHeartRate(packOfHeartRate.get(i));
+
+
+                heartPack.setUserName(packOfLocations.get(packOfLocations.size()-2));
+                heartPack.setType(packOfLocations.get(packOfLocations.size()-1));
+                batchOperation3.insert(heartPack);
+                //<-----Insert into the batch(list)----->//
+            }
+
+            //<--------------------------------------------Notes---------------------------------------->//
+            CloudStorageAccount storageAccount4 = CloudStorageAccount.parse(connectionString);
+            CloudTableClient tableClient4 = storageAccount4.createCloudTableClient();
+            TableBatchOperation batchOperation4 = new TableBatchOperation();
+            CloudTable cloudTable4 = tableClient4.getTableReference("dettaheart");
+
+            //<-----Loop through the packs and add it to a table batch----->//
+            for(int i = 0; i < packOfNotes.size()-4; i++) {
+
+
+                NotesEntity notePack = new NotesEntity("Mattias" + getDay(), uniqueKey.toString());
+                notePack.setTheNote(packOfNotes.get(i));
+
+
+                notePack.setUserName(packOfLocations.get(packOfLocations.size()-2));
+                notePack.setType(packOfLocations.get(packOfLocations.size()-1));
+                batchOperation3.insert(notePack);
+                //<-----Insert into the batch(list)----->//
+            }
+
+
             //<-----Debug----->//
             System.out.println("First index in batch " + batchOperation.get(0));
 
@@ -491,14 +570,18 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             packOfLocations.clear();
             packOfStepCounter.clear();
             packOfHeartRate.clear();
+            packOfNotes.clear();
 
 
             //<-----Execute batch----->//
             cloudTable.execute(batchOperation);
+            cloudTable2.execute(batchOperation2);
+            cloudTable3.execute(batchOperation3);
+            cloudTable4.execute(batchOperation4);
 
 
             //<-----DEBUG, Get Table----->//
-            debugGetBatchFromCloud(connectionString);
+            //debugGetBatchFromCloud(connectionString);
         }
         catch (Exception ex)
         {
