@@ -18,6 +18,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -55,7 +57,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
     private ArrayList<String> packOfHeartRate = new ArrayList();
     private ArrayList<String> packOfNotes = new ArrayList();
     //<-----Temporary variables, used for EG. Sorting out unused data----->//
-    private String cordinations = "-";
+    private String cordinations = "0,0";
     private float steps = 0;
     private float heart = 0;
 
@@ -70,7 +72,16 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
     private ImageButton theRecord = null;
     private Button theConfirmAndSend = null;
     private Button theConfirmToCloud = null;
-
+    //<-----CheckBoxes----->//
+    private CheckBox gpsCheckBox;
+    private CheckBox stepCheckBox;
+    private CheckBox heartChecBox;
+    //<-----CheckBoxesValues----->//
+    private boolean gpsEnabled = true;
+    private boolean stepEnabled = true;
+    private boolean heartEnabled = true;
+    //<-----Email----->//
+    private String userEmail;
 
 
     //<-----Audio Code----->//
@@ -82,9 +93,8 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
 
-        //<-----Find all the sensors on the phone and print them----->//
-        checkAllSensorsOnPhone();
-
+        //<-----Get the user email----->//
+        getTheIntent();
 
         //<-----Find components in view----->//
         final Button startAndStop = (Button) findViewById(R.id.start);
@@ -95,6 +105,10 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         final Button confirmAndSend = (Button) findViewById(R.id.confirmSend);
         final Button confirmToCloud = (Button) findViewById(R.id.ConfirmToCloud);
 
+        final CheckBox checkBoxForGPS = (CheckBox) findViewById(R.id.checkBoxGPS);
+        final CheckBox checkBoxForStep = (CheckBox) findViewById(R.id.checkBoxStep);
+        final CheckBox checkBoxForHeart = (CheckBox) findViewById(R.id.checkBoxHeart);
+
 
         //<-----Create Global variables----->//
         theLabelText = labelText;
@@ -102,6 +116,65 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         theRecord = record;
         theConfirmAndSend = confirmAndSend;
         theConfirmToCloud = confirmToCloud;
+
+        gpsCheckBox = checkBoxForGPS;
+        stepCheckBox = checkBoxForStep;
+        heartChecBox = checkBoxForHeart;
+
+        //<-----Find all the sensors on the phone and print them----->//
+        checkAllSensorsOnPhone();
+
+        //<-----Disable checkBoxes if sensors does not exist----->//
+        checkIfSensorExists();
+
+        //<-----CheckBoxes Clicked----->//
+        checkBoxForGPS.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                if(isChecked){
+                    gpsEnabled = true;
+                    System.out.println("Enabled GPS");
+                    createShortToastInvoke("Enabled GPS");
+
+                }
+                else{
+                    gpsEnabled = false;
+                    System.out.println("Disabled GPS");
+                    createShortToastInvoke("Disabled GPS");
+                }
+            }
+        });
+        checkBoxForStep.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    stepEnabled = true;
+                    System.out.println("Enabled StepCounter");
+                    createShortToastInvoke("Enabled StepCounter");
+                }
+                else{
+                    stepEnabled = false;
+                    System.out.println("Disabled StepCounter");
+                    createShortToastInvoke("Disabled StepCounter");
+                }
+            }
+        });
+        checkBoxForHeart.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    heartEnabled = true;
+                    System.out.println("Enabled HeartRate");
+                    createShortToastInvoke("Enabled HeartRate");
+                }
+                else{
+                    heartEnabled = false;
+                    System.out.println("Disabled HeartRate");
+                    createShortToastInvoke("Disabled HeartRate");
+                }
+            }
+        });
 
         record.setOnClickListener(new View.OnClickListener() {
 
@@ -122,6 +195,8 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             @Override
             public void onClick(View v) {
                 debugSendBatch();
+                hideComponents();
+
             }
         });
 
@@ -307,6 +382,9 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         }
         if (event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
             heart = event.values[0];
+
+            //<-----Debug heartRate----->//
+            System.out.println("Heartrate: " + heart);
         }
 
     }
@@ -430,8 +508,8 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
     public String setUpCloud() {
         //<-----Connection String----->//
       String storageConnectionString = "DefaultEndpointsProtocol=https;"
-                + "AccountName=swashy;"
-                + "AccountKey=htDP1zlcodix9vgpq7w6Yuo9VNPE0/H5nC9AHjePUM8xFJ2NGRCZJZGIbBVuZ6uAemarlQgz/SHrP6si/LJ3Kw==";
+                + "AccountName=iuliunicolaestorage;"
+                + "AccountKey=L4YdTWd3pBvTGAFtBzCL3B/rALAn06nEI9iPSKgOLWabrFF/xFZFPy32bVXUzmy8z8slqkj/k4tpPLVjtJzBmA==";
 
         try {
 
@@ -473,7 +551,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         try
         {
             //<-----Generate a random key----->//
-            UUID uniqueKey = UUID.randomUUID();
+            UUID uniqueKey;
 
             //<--------------------------------------------GPS---------------------------------------->//
             //<-----Get reference to GPS table storage----->//
@@ -483,23 +561,33 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             CloudTable cloudTable = tableClient.getTableReference("dettagps");
 
             //<-----Loop through the packs and add it to a table batch----->//
-            for(int i = 0; i < packOfLocations.size()-4; i++) {
-            //<-----Split locations into X and Y----->//
-                String splittedArray = packOfLocations.get(i);
-                String[] vals = splittedArray.split(",");
-                GPSEntity GPSPack = new GPSEntity("Mattias" + getDay(),uniqueKey.toString());
-                if(vals.length == 2) {
-                    GPSPack.setLongitude(vals[0]);
-                    GPSPack.setLatitude(vals[1]);
+            if(gpsEnabled == true) {
+                for (int i = 0; i < packOfLocations.size() - 3; i++) {
+                    //<-----Split locations into X and Y----->//
+                    uniqueKey = UUID.randomUUID();
+                    String splittedArray = packOfLocations.get(i);
+                    String[] vals = new String[2];
+                    if (!splittedArray.equals("0")) {
+                        vals = splittedArray.split(",");
+                    }
+
+                    GPSEntity GPSPack = new GPSEntity(userEmail + getDay(), uniqueKey.toString());
+                    if (vals.length == 2) {
+                        GPSPack.setLongitude(Double.parseDouble(vals[0]));
+                        GPSPack.setLatitude(Double.parseDouble(vals[1]));
+                    } else {
+                        GPSPack.setLongitude(Double.parseDouble(vals[0]));
+                        GPSPack.setLatitude(Double.parseDouble(vals[0]));
+                    }
+                    GPSPack.setUserName(packOfLocations.get(packOfLocations.size() - 2));
+                    GPSPack.setType(packOfLocations.get(packOfLocations.size() - 1));
+                    batchOperation.insert(GPSPack);
+                    //<-----Insert into the batch(list)----->//
                 }
-                else{
-                    GPSPack.setLongitude(vals[0]);
-                    GPSPack.setLatitude(vals[0]);
-                }
-                GPSPack.setUserName(packOfLocations.get(packOfLocations.size()-2));
-                GPSPack.setType(packOfLocations.get(packOfLocations.size()-1));
-                batchOperation.insert(GPSPack);
-                //<-----Insert into the batch(list)----->//
+            }else{
+
+                System.out.println("Error3000: GPS Disabled");
+
             }
 
             //<--------------------------------------------StepCounter---------------------------------------->//
@@ -509,17 +597,23 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             CloudTable cloudTable2 = tableClient2.getTableReference("dettastep");
 
             //<-----Loop through the packs and add it to a table batch----->//
-            for(int i = 0; i < packOfStepCounter.size()-4; i++) {
+            if(stepEnabled == true) {
+                for (int i = 0; i < packOfStepCounter.size() - 3; i++) {
+                    uniqueKey = UUID.randomUUID();
 
+                    StepCounterEntity stepPack = new StepCounterEntity(userEmail + getDay(), uniqueKey.toString());
+                    stepPack.setSteps(Double.parseDouble(packOfStepCounter.get(i)));
 
-                StepCounterEntity stepPack = new StepCounterEntity("Mattias" + getDay(), uniqueKey.toString());
-                stepPack.setSteps(packOfStepCounter.get(i));
+                    stepPack.setDate(getDay());
+                    stepPack.setUserName(packOfLocations.get(packOfLocations.size() - 2));
+                    stepPack.setType(packOfLocations.get(packOfLocations.size() - 1));
+                    batchOperation2.insert(stepPack);
+                    //<-----Insert into the batch(list)----->//
+                }
+            }else{
 
+                System.out.println("Error3001: Step Counter disabled");
 
-                stepPack.setUserName(packOfLocations.get(packOfLocations.size()-2));
-                stepPack.setType(packOfLocations.get(packOfLocations.size()-1));
-                batchOperation2.insert(stepPack);
-                //<-----Insert into the batch(list)----->//
             }
 
             //<--------------------------------------------HeartRate---------------------------------------->//
@@ -529,55 +623,86 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             CloudTable cloudTable3 = tableClient3.getTableReference("dettaheart");
 
             //<-----Loop through the packs and add it to a table batch----->//
-            for(int i = 0; i < packOfHeartRate.size()-4; i++) {
+            if(heartEnabled == true) {
+                for (int i = 0; i < packOfHeartRate.size() - 3; i++) {
+                    uniqueKey = UUID.randomUUID();
+
+                    HeartRateEntity heartPack = new HeartRateEntity(userEmail + getDay(), uniqueKey.toString());
+                    heartPack.setHeartRate(Double.parseDouble(packOfHeartRate.get(i)));
 
 
-                HeartRateEntity heartPack = new HeartRateEntity("Mattias" + getDay(), uniqueKey.toString());
-                heartPack.setHeartRate(packOfHeartRate.get(i));
+                    heartPack.setUserName(packOfLocations.get(packOfLocations.size() - 2));
+                    heartPack.setType(packOfLocations.get(packOfLocations.size() - 1));
+                    batchOperation3.insert(heartPack);
+                    //<-----Insert into the batch(list)----->//
+                }
+            }else{
 
+                System.out.println("Error3002: Heart Rate Disabled");
 
-                heartPack.setUserName(packOfLocations.get(packOfLocations.size()-2));
-                heartPack.setType(packOfLocations.get(packOfLocations.size()-1));
-                batchOperation3.insert(heartPack);
-                //<-----Insert into the batch(list)----->//
             }
 
             //<--------------------------------------------Notes---------------------------------------->//
             CloudStorageAccount storageAccount4 = CloudStorageAccount.parse(connectionString);
             CloudTableClient tableClient4 = storageAccount4.createCloudTableClient();
             TableBatchOperation batchOperation4 = new TableBatchOperation();
-            CloudTable cloudTable4 = tableClient4.getTableReference("dettaheart");
+            CloudTable cloudTable4 = tableClient4.getTableReference("dettanote");
 
             //<-----Loop through the packs and add it to a table batch----->//
-            for(int i = 0; i < packOfNotes.size()-4; i++) {
 
+            for(int i = 0; i < packOfNotes.size()-3; i++) {
+                uniqueKey = UUID.randomUUID();
 
-                NotesEntity notePack = new NotesEntity("Mattias" + getDay(), uniqueKey.toString());
+                NotesEntity notePack = new NotesEntity(userEmail + getDay(), uniqueKey.toString());
                 notePack.setTheNote(packOfNotes.get(i));
 
 
                 notePack.setUserName(packOfLocations.get(packOfLocations.size()-2));
                 notePack.setType(packOfLocations.get(packOfLocations.size()-1));
-                batchOperation3.insert(notePack);
+                batchOperation4.insert(notePack);
                 //<-----Insert into the batch(list)----->//
             }
 
 
-            //<-----Debug----->//
-            System.out.println("First index in batch " + batchOperation.get(0));
+            //<-----Execute batch----->//
+            if(!batchOperation.isEmpty()) {
+                cloudTable.execute(batchOperation);
+            }
+            else{
+
+                System.out.println("Error2000: Locations Batch is empty");
+
+            }
+            if(!batchOperation2.isEmpty()) {
+                cloudTable2.execute(batchOperation2);
+            }
+            else{
+
+                System.out.println("Error2001: Step Batch is empty");
+
+            }
+            if(!batchOperation3.isEmpty()) {
+                cloudTable3.execute(batchOperation3);
+            }
+            else{
+
+                System.out.println("Error2002: Heart Batch is empty");
+
+            }
+            if(!batchOperation4.isEmpty()) {
+                cloudTable4.execute(batchOperation4);
+            }
+            else{
+
+                System.out.println("Error2003: Notes Batch is empty");
+
+            }
 
             //<-----clearears----->//
             packOfLocations.clear();
             packOfStepCounter.clear();
             packOfHeartRate.clear();
             packOfNotes.clear();
-
-
-            //<-----Execute batch----->//
-            cloudTable.execute(batchOperation);
-            cloudTable2.execute(batchOperation2);
-            cloudTable3.execute(batchOperation3);
-            cloudTable4.execute(batchOperation4);
 
 
             //<-----DEBUG, Get Table----->//
@@ -594,7 +719,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         try
         {
             // Define constants for filters.
-            final String PARTITION_KEY = "Mattias";
+            final String PARTITION_KEY = "Mattias" + getDay();
 
             // Retrieve storage account from connection-string.
             CloudStorageAccount storageAccount = CloudStorageAccount.parse(connectionString);
@@ -603,10 +728,10 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             CloudTableClient tableClient = storageAccount.createCloudTableClient();
 
             // Create a cloud table object for the table.
-            CloudTable cloudTable = tableClient.getTableReference("hejjohan");
+            CloudTable cloudTable = tableClient.getTableReference("dettagps");
 
             // Create a filter condition where the partition key is "Smith".
-            String partitionFilter = TableQuery.generateFilterCondition(PARTITION_KEY, QueryComparisons.EQUAL, "Mattias");
+            String partitionFilter = TableQuery.generateFilterCondition(PARTITION_KEY, QueryComparisons.EQUAL, "Mattias" + getDay());
 
             // Specify a partition query, using "Smith" as the partition key filter.
             TableQuery<GPSEntity> partitionQuery = TableQuery.from(GPSEntity.class).where(partitionFilter);
@@ -633,6 +758,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         if(startAndStopBool == false){
         //<-----Start----->//
 
+            //<-----DEBUG----->//
             System.out.println("Hide New components");
 
             theLabelText.setVisibility(View.INVISIBLE);
@@ -645,6 +771,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         else{
         //<-----Stop----->//
 
+            //<-----DEBUG----->//
             System.out.println("Display New components");
 
             theLabelText.setVisibility(View.VISIBLE);
@@ -658,18 +785,16 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         }
     }
     private void promptSpeechInput() {
+        //<-----Prompt the speech----->//
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
-                getString(R.string.speech_prompt));
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.speech_prompt));
         try {
             startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
         } catch (ActivityNotFoundException a) {
-            Toast.makeText(getApplicationContext(),
-                    getString(R.string.speech_not_supported),
-                    Toast.LENGTH_SHORT).show();
+            //<-----Toast this----->//
+            Toast.makeText(getApplicationContext(), getString(R.string.speech_not_supported), Toast.LENGTH_SHORT).show();
         }
 
     }
@@ -691,9 +816,88 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         }
     }
     public void addMetaDataToTable(){
+        if(!theWhatYouSaid.getText().equals("Speech to text:")) {
+            //<-----Add note to pack----->//
+            packOfNotes.add(theWhatYouSaid.getText().toString());
+            //<-----DEBUG----->//
+            System.out.println("Added a note to packOfNotes: " + packOfNotes.get(0) + "Size: " + packOfNotes.size());
+            //<-----Toast this for response----->//
+            Toast.makeText(this, "Added a note", Toast.LENGTH_LONG).show();
+        }
+        else{
 
-        packOfNotes.add(theWhatYouSaid.getText().toString());
+            Toast.makeText(this, "Please say something", Toast.LENGTH_LONG).show();
+        }
 
+    }
+    public void hideComponents(){
+
+        //<-----Manually hide all the components----->//
+
+        //<-----DEBUG----->//
+        System.out.println("Hide New components");
+
+        theLabelText.setVisibility(View.INVISIBLE);
+        theWhatYouSaid.setVisibility(View.INVISIBLE);
+        theRecord.setVisibility(View.INVISIBLE);
+        theConfirmAndSend.setVisibility(View.INVISIBLE);
+        theConfirmToCloud.setVisibility(View.INVISIBLE);
+
+
+        //<-----Toast this for response----->//
+        Toast.makeText(this, "Information uploaded to cloud", Toast.LENGTH_LONG).show();
+    }
+
+    public void checkIfSensorExists(){
+
+        PackageManager PM= this.getPackageManager();
+        boolean gps = PM.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
+        boolean step = PM.hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_COUNTER);
+        boolean heart = PM.hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE);
+
+        if(gps == false){
+            gpsCheckBox.setEnabled(false);
+            gpsEnabled = false;
+        }
+        else{
+
+            gpsCheckBox.setEnabled(true);
+            gpsCheckBox.setChecked(true);
+            gpsEnabled = true;
+
+        }
+        if(step == false){
+            stepCheckBox.setEnabled(false);
+            stepEnabled = false;
+        }else{
+
+            stepCheckBox.setEnabled(true);
+            stepCheckBox.setChecked(true);
+            stepEnabled = true;
+
+        }
+        if(heart == false){
+            heartChecBox.setEnabled(false);
+            heartEnabled = false;
+        }else{
+
+            heartChecBox.setEnabled(true);
+            heartChecBox.setChecked(true);
+            heartEnabled = true;
+
+        }
+    }
+
+    public void createShortToastInvoke(String text){
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+    }
+
+    public void getTheIntent(){
+        //<-----Get intent from previous scene----->//
+        Intent intent = getIntent();
+        userEmail = intent.getExtras().getString("email");
+        //<-----DEBUG----->//
+        System.out.println("Email entered: " + userEmail);
     }
 }
 

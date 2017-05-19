@@ -15,9 +15,10 @@ import com.microsoft.azure.storage.table.TableServiceEntity;
 
 public class StepCounterEntity extends TableServiceEntity {
 
-    String steps;
+    Double steps;
     String type = "S";
     String userName;
+    String date;
 
     public StepCounterEntity(String user, String row ){
         this.partitionKey = user;
@@ -26,11 +27,11 @@ public class StepCounterEntity extends TableServiceEntity {
     }
     public StepCounterEntity (){}
 
-    public String getSteps() {
+    public Double getSteps() {
         return steps;
     }
 
-    public void setSteps(String steps) {
+    public void setSteps(Double steps) {
         this.steps = steps;
     }
 
@@ -50,5 +51,12 @@ public class StepCounterEntity extends TableServiceEntity {
         this.userName = userName;
     }
 
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
 }
 

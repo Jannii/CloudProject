@@ -8,7 +8,7 @@ import com.microsoft.azure.storage.table.TableServiceEntity;
 
 public class HeartRateEntity extends TableServiceEntity {
 
-    String heartRate;
+    Double heartRate;
     String type = "H";
     String userName;
 
@@ -19,11 +19,11 @@ public class HeartRateEntity extends TableServiceEntity {
     }
     public HeartRateEntity (){}
 
-    public String getHeartRate() {
+    public Double getHeartRate() {
         return heartRate;
     }
 
-    public void setHeartRate(String heartRate) {
+    public void setHeartRate(Double heartRate) {
         this.heartRate = heartRate;
     }
 
@@ -42,5 +42,4 @@ public class HeartRateEntity extends TableServiceEntity {
     public void setUserName(String userName) {
         this.userName = userName;
     }
-
 }

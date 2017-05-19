@@ -8,12 +8,11 @@ import com.microsoft.azure.storage.table.TableServiceEntity;
 
 public class GPSEntity extends TableServiceEntity {
 
-    String latitude;
-    String longitude;
+    Double latitude;
+    Double longitude;
     String ID;
     String type = "G";
     String userName;
-
 
     public GPSEntity(String user, String row ){
         this.partitionKey = user;
@@ -23,21 +22,28 @@ public class GPSEntity extends TableServiceEntity {
     public GPSEntity (){}
 
 
-
-    public String getLatitude() {
+    public Double getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(String latitude) {
+    public void setLatitude(Double latitude) {
         this.latitude = latitude;
     }
 
-    public String getLongitude() {
+    public Double getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(String longitude) {
+    public void setLongitude(Double longitude) {
         this.longitude = longitude;
+    }
+
+    public String getID() {
+        return ID;
+    }
+
+    public void setID(String ID) {
+        this.ID = ID;
     }
 
     public String getType() {
@@ -56,11 +62,5 @@ public class GPSEntity extends TableServiceEntity {
         this.userName = userName;
     }
 
-    public String getID() {
-        return ID;
-    }
 
-    public void setID(String ID) {
-        this.ID = ID;
-    }
 }

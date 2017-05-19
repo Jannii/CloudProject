@@ -4,75 +4,53 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#CCFFCC"
     tools:context="com.example.gul_h.letsrun.MainActivity">
 
     <Button
         android:id="@+id/login"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Login"
-        android:layout_alignParentBottom="true"
+        android:layout_below="@+id/userName"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="53dp" />
+        android:layout_marginTop="34dp"
+        android:text="Accept" />
 
     <TextView
+        android:id="@+id/textView4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome, Please log in to the system!"
-        android:id="@+id/textView4"
         android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginRight="60dp"
-        android:layout_marginEnd="60dp" />
+        android:layout_centerHorizontal="true"
+        android:text="Welcome, please enter an E-mail" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Username"
-        android:layout_marginTop="92dp"
         android:layout_below="@+id/textView4"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="92dp"
+        android:text="Enter Email" />
 
     <EditText
         android:id="@+id/userName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:inputType="textPersonName"
-        android:text=""
         android:layout_below="@+id/textView"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="15dp" />
+        android:layout_marginTop="15dp"
+        android:inputType="textPersonName"
+        android:text="" />
 
-    <TextView
-        android:id="@+id/textView2"
+    <CheckBox
+        android:id="@+id/remember"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Password"
-        android:layout_below="@+id/userName"
-        android:layout_alignRight="@+id/textView"
-        android:layout_alignEnd="@+id/textView"
-        android:layout_marginTop="82dp" />
-
-    <EditText
-        android:id="@+id/passWord"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:inputType="textPassword"
-        android:layout_marginTop="14dp"
-        android:layout_below="@+id/textView2"
-        android:layout_alignLeft="@+id/userName"
-        android:layout_alignStart="@+id/userName" />
-
-    <Button
-        android:id="@+id/audio"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Audio"
-        android:layout_below="@+id/passWord"
         android:layout_alignLeft="@+id/login"
         android:layout_alignStart="@+id/login"
-        android:layout_marginTop="12dp" />
+        android:layout_below="@+id/login"
+        android:layout_marginTop="11dp"
+        android:text="Remeber" />
 
 </RelativeLayout>
