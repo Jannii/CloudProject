@@ -8,9 +8,10 @@ import com.microsoft.azure.storage.table.TableServiceEntity;
 
 public class NotesEntity extends TableServiceEntity {
 
-    String theNote;
-    String type = "N";
-    String userName;
+    private String theNote;
+    private String type = "N";
+    private String userName;
+    private String date;
 
     public NotesEntity(String user, String row) {
         this.partitionKey = user;
@@ -19,6 +20,7 @@ public class NotesEntity extends TableServiceEntity {
 
     public NotesEntity() {
     }
+
 
     public String getTheNote() {
         return theNote;
@@ -44,4 +46,11 @@ public class NotesEntity extends TableServiceEntity {
         this.userName = userName;
     }
 
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
 }

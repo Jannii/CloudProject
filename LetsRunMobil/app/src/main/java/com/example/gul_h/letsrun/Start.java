@@ -630,7 +630,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
                     HeartRateEntity heartPack = new HeartRateEntity(userEmail + getDay(), uniqueKey.toString());
                     heartPack.setHeartRate(Double.parseDouble(packOfHeartRate.get(i)));
 
-
+                    heartPack.setDate(getDay());
                     heartPack.setUserName(packOfLocations.get(packOfLocations.size() - 2));
                     heartPack.setType(packOfLocations.get(packOfLocations.size() - 1));
                     batchOperation3.insert(heartPack);
@@ -656,7 +656,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
                 NotesEntity notePack = new NotesEntity(userEmail + getDay(), uniqueKey.toString());
                 notePack.setTheNote(packOfNotes.get(i));
 
-
+                notePack.setDate(getDay());
                 notePack.setUserName(packOfLocations.get(packOfLocations.size()-2));
                 notePack.setType(packOfLocations.get(packOfLocations.size()-1));
                 batchOperation4.insert(notePack);
