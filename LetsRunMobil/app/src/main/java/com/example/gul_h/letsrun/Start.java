@@ -444,7 +444,7 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
         String note;
         //<-----Declare values----->//
         date = getDateAndTime();
-        userName = "Swashy";
+        userName = userEmail;
         GPS = "G";
         step = "S";
         heart = "H";
