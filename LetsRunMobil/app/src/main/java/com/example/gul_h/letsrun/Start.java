@@ -762,9 +762,9 @@ public class Start extends AppCompatActivity implements LocationListener, Sensor
             System.out.println("Hide New components");
 
             theLabelText.setVisibility(View.INVISIBLE);
-            theWhatYouSaid.setVisibility(View.INVISIBLE);
-            theRecord.setVisibility(View.INVISIBLE);
-            theConfirmAndSend.setVisibility(View.INVISIBLE);
+            theWhatYouSaid.setVisibility(View.VISIBLE);
+            theRecord.setVisibility(View.VISIBLE);
+            theConfirmAndSend.setVisibility(View.VISIBLE);
             theConfirmToCloud.setVisibility(View.INVISIBLE);
 
         }
